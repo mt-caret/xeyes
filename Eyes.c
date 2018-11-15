@@ -48,6 +48,7 @@ from the X Consortium.
 # include <X11/extensions/shape.h>
 # include <X11/Xlibint.h>
 # include <stdlib.h>
+# include <stdbool.h>
 
 #if (defined(SVR4) || defined(SYSV) && defined(i386))
 extern double hypot(double, double);
@@ -456,6 +457,7 @@ drawEyes(EyesWidget w, TPoint mouse)
 
 static void draw_it_core(EyesWidget w)
 {
+    static bool flag = false;
     Window		rep_root, rep_child;
     int			rep_rootx, rep_rooty;
     unsigned int	rep_mask;
@@ -464,11 +466,47 @@ static void draw_it_core(EyesWidget w)
     Display		*dpy = XtDisplay (w);
     Window		win = XtWindow (w);
 
-    XQueryPointer (dpy, win, &rep_root, &rep_child,
-	    &rep_rootx, &rep_rooty, &dx, &dy, &rep_mask);
-    mouse.x = Tx(dx, dy, &w->eyes.t);
-    mouse.y = Ty(dx, dy, &w->eyes.t);
+    //XQueryPointer (dpy, win, &rep_root, &rep_child,
+    //      &rep_rootx, &rep_rooty, &dx, &dy, &rep_mask);
+    //mouse.x = Tx(dx, dy, &w->eyes.t);
+    //mouse.y = Ty(dx, dy, &w->eyes.t);
 
+    if (!flag) {
+        char *input = NULL;
+        size_t n = 0;
+        if (getline(&input, &n, stdin) == -1) {
+          perror("xeyes (draw_it_core)");
+          free(input);
+          flag = true;
+          return;
+        }
+        //printf("input: %s\n", input);
+        char *p = NULL;
+        double x, y;
+        if ((p = strtok(input, " ")) == NULL) {
+          fprintf(stderr, "failed to parse string");
+          free(input);
+          flag = true;
+          return;
+        }
+        x = atof(p);
+        if ((p = strtok(NULL, " ")) == NULL) {
+          fprintf(stderr, "failed to parse string");
+          free(input);
+          flag = true;
+          return;
+        }
+        y = atof(p);
+        free(input);
+
+        mouse.x = x;
+        mouse.y = y;
+    } else {
+        mouse.x = 0;
+        mouse.y = 0;
+    }
+
+    //printf("%f, %f \n", mouse.x, mouse.y);
     drawEyes(w, mouse);
 }
 
